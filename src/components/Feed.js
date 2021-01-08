@@ -1,7 +1,7 @@
 import { FontAwesome, FontAwesome5, Fontisto, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Video } from 'expo-av'
 import React, { useEffect, useRef, useState } from 'react'
-import { Animated, Dimensions, Image, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
+import { Animated, Dimensions, Easing, Image, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import TextTicker from 'react-native-text-ticker'
@@ -13,13 +13,16 @@ export default ({ video, avatar, name, isPlay }) => {
 
     const fadeAnim = useRef(new Animated.Value(0)).current
 
+    const spinValue = new Animated.Value(0)
+    const [spinning, setSpinning] = useState(false)
+    const [rotationOffset, setRotatioOffset] = useState(0)
+
     const [playing, setPlaying] = useState(true)
     const [buttonVisible, setButtonVisible] = useState(false)
 
     const videoRef = useRef(null)
 
     const handlePlayBack = () => {
-
         if (playing) {
             videoRef.current.pauseAsync()
             Animated.timing(fadeAnim, {
@@ -35,111 +38,138 @@ export default ({ video, avatar, name, isPlay }) => {
                 useNativeDriver: true
             }).start();
         }
-
         setPlaying(!playing)
     }
+
+    const startLoopAnimation = () => {
+        spinValue.setOffset(rotationOffset)
+        Animated.loop(
+            Animated.timing(spinValue, {
+                toValue: 1,
+                duration: 2000,
+                easing: Easing.linear,
+                useNativeDriver: true
+            })
+        ).start();
+
+    };
+
+    const stopLoopAnimation = () => {
+        spinValue.stopAnimation(currentValue => {
+            setRotatioOffset(currentValue)
+        });
+    };
+
+    const spin = spinValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg']
+    })
 
     return (
 
         <View>
 
-            <>
-                <TouchableWithoutFeedback style={{ width: width, height: height }} onPress={handlePlayBack}>
-                    <Video
-                        ref={videoRef}
-                        source={{ uri: video }}
-                        rate={1.0}
-                        volume={1.0}
-                        isMuted={false}
-                        resizeMode="cover"
-                        shouldPlay
-                        isLooping
-                        style={{ width: width, height: height - 48 }}
-                    />
-                </TouchableWithoutFeedback>
+            {isPlay && (
 
-                <View style={styles.buttonsHeader}>
-                    <TouchableOpacity style={styles.buttonHeader}>
-                        <Text style={styles.buttonHeaderText}>Seguindo</Text>
-                    </TouchableOpacity>
 
-                    <View style={{
-                        height: 12,
-                        borderRightWidth: 1,
-                        borderRightColor: '#ccc'
-                    }} />
+                <>
+                    <TouchableWithoutFeedback style={{ width: width, height: height }} onPress={() => handlePlayBack()}>
+                        <Video
+                            ref={videoRef}
+                            source={{ uri: video }}
+                            rate={1.0}
+                            volume={1.0}
+                            isMuted={false}
+                            resizeMode="cover"
+                            shouldPlay
+                            isLooping
+                            style={{ width: width, height: height - 48 }}
+                        />
+                    </TouchableWithoutFeedback>
 
-                    <TouchableOpacity style={styles.buttonHeader}>
-                        <Text style={[styles.buttonHeaderText, { fontWeight: 'bold' }]}>Para você</Text>
-                    </TouchableOpacity>
-                </View>
+                    <View style={styles.buttonsHeader}>
+                        <TouchableOpacity style={styles.buttonHeader}>
+                            <Text style={styles.buttonHeaderText}>Seguindo</Text>
+                        </TouchableOpacity>
 
-                <View style={styles.buttonsContainer}>
-                    <View style={styles.buttonsContainerArea}>
-                        <TouchableOpacity style={styles.buttonProfile}>
-                            <Image
-                                source={avatar}
-                                style={styles.image}
-                            />
+                        <View style={{
+                            height: 12,
+                            borderRightWidth: 1,
+                            borderRightColor: '#ccc'
+                        }} />
+
+                        <TouchableOpacity style={styles.buttonHeader}>
+                            <Text style={[styles.buttonHeaderText, { fontWeight: 'bold' }]}>Para você</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.buttonsContainerArea}>
-                        <TouchableOpacity >
-                            <FontAwesome name="heart" size={40} color="#fff" />
-                        </TouchableOpacity>
-                        <Text style={styles.buttonNummber}>999</Text>
-                    </View>
-
-                    <View style={styles.buttonsContainerArea}>
-                        <TouchableOpacity >
-                            <FontAwesome name="commenting" size={40} color="#fff" />
-                        </TouchableOpacity>
-                        <Text style={styles.buttonNummber}>999</Text>
-                    </View>
-
-                    <View style={styles.buttonsContainerArea}>
-                        <TouchableOpacity>
-                            <MaterialCommunityIcons name="share" size={40} color="#fff" />
-                        </TouchableOpacity>
-                        <Text style={styles.buttonNummber}>999</Text>
-                    </View>
-
-                    <View style={styles.buttonsContainerArea}>
-                        <TouchableOpacity>
-                            <FontAwesome5 name="compact-disc" size={50} color="#000" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                <View style={styles.areaFooter}>
-                    <Text style={styles.areaFooterName}>{name}</Text>
-
-                    <View style={styles.areaFooterMusic}>
-                        <Fontisto name="music-note" size={24} color="#fff" />
-
-                        <View style={{ marginLeft: 20 }}>
-                            <TextTicker
-                                style={{ fontSize: 18, color: '#fff' }}
-                                duration={4000}
-                                loop
-                                bounce={false}
-                                repeatSpacer={70}
-                                marqueeDelay={1000}
-                                shouldAnimateTreshold={40}
-                            >
-                                Som original - toktok
-                    </TextTicker>
+                    <View style={styles.buttonsContainer}>
+                        <View style={styles.buttonsContainerArea}>
+                            <TouchableOpacity style={styles.buttonProfile}>
+                                <Image
+                                    source={avatar}
+                                    style={styles.image}
+                                />
+                            </TouchableOpacity>
                         </View>
 
+                        <View style={styles.buttonsContainerArea}>
+                            <TouchableOpacity >
+                                <FontAwesome name="heart" size={40} color="#fff" />
+                            </TouchableOpacity>
+                            <Text style={styles.buttonNummber}>999</Text>
+                        </View>
 
+                        <View style={styles.buttonsContainerArea}>
+                            <TouchableOpacity>
+                                <FontAwesome name="commenting" size={40} color="#fff" />
+                            </TouchableOpacity>
+                            <Text style={styles.buttonNummber}>999</Text>
+                        </View>
+
+                        <View style={styles.buttonsContainerArea}>
+                            <TouchableOpacity>
+                                <MaterialCommunityIcons name="share" size={40} color="#fff" />
+                            </TouchableOpacity>
+                            <Text style={styles.buttonNummber}>999</Text>
+                        </View>
+
+                        <Animated.View style={[styles.buttonsContainerArea, { transform: [{ rotate: spin }] }]}>
+                            <TouchableOpacity>
+                                <FontAwesome5 name="compact-disc" size={50} color="#000" />
+                            </TouchableOpacity>
+                        </Animated.View>
                     </View>
-                </View>
 
-                <Animated.View style={[styles.areaButtonPlayBack, { opacity: fadeAnim }]}>
-                    <MaterialCommunityIcons name="play" size={140} color="#fff" />
-                </Animated.View>
-            </>
+                    <View style={styles.areaFooter}>
+                        <Text style={styles.areaFooterName}>{name}</Text>
+
+                        <View style={styles.areaFooterMusic}>
+                            <Fontisto name="music-note" size={24} color="#fff" />
+
+                            <View style={{ marginLeft: 20 }}>
+                                <TextTicker
+                                    style={{ fontSize: 18, color: '#fff' }}
+                                    duration={4000}
+                                    loop
+                                    bounce={false}
+                                    repeatSpacer={70}
+                                    marqueeDelay={1000}
+                                    shouldAnimateTreshold={40}
+                                >
+                                    Som original - toktok
+                    </TextTicker>
+                            </View>
+
+
+                        </View>
+                    </View>
+
+                    <Animated.View style={[styles.areaButtonPlayBack, { opacity: fadeAnim }]}>
+                        <MaterialCommunityIcons name="play" size={140} color="#fff" />
+                    </Animated.View>
+                </>
+            )}
 
         </View>
     )
